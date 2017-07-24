@@ -1,0 +1,23 @@
+hash: 082f07bf04b7ca2089ad962b6aa99bd11e0636c5e3bce1d1bf23b3d4be64ea93
+updated: 2017-07-21T19:15:59.921396057Z
+imports:
+- name: code.cloudfoundry.org/lager
+  version: 438ab98cc3b9b81e97c2281422b2722cd8e80ed8
+  subpackages:
+  - lagerflags
+- name: github.com/Azure/azure-sdk-for-go
+  version: 738d332d2622d2206d81a83a26d34a40a1d6ab8f
+  subpackages:
+  - arm/resources/resources
+- name: github.com/Azure/go-autorest
+  version: 10791a4516e77c53ab10f198f144804cca3d5b43
+  subpackages:
+  - autorest
+  - autorest/adal
+  - autorest/azure
+  - autorest/date
+  - autorest/to
+  - autorest/validation
+- name: github.com/dgrijalva/jwt-go
+  version: a539ee1a749a2b895533f979515ac7e6e0f5b650
+testImports: []
