@@ -1,5 +1,5 @@
 hash: 082f07bf04b7ca2089ad962b6aa99bd11e0636c5e3bce1d1bf23b3d4be64ea93
-updated: 2017-07-21T19:15:59.921396057Z
+updated: 2017-07-27T18:17:10.097066642Z
 imports:
 - name: code.cloudfoundry.org/lager
   version: 438ab98cc3b9b81e97c2281422b2722cd8e80ed8
@@ -10,7 +10,7 @@ imports:
   subpackages:
   - arm/resources/resources
 - name: github.com/Azure/go-autorest
-  version: 10791a4516e77c53ab10f198f144804cca3d5b43
+  version: f6e08fe5e4d45c9a66e40196d3fed5f37331d224
   subpackages:
   - autorest
   - autorest/adal
@@ -20,4 +20,6 @@ imports:
   - autorest/validation
 - name: github.com/dgrijalva/jwt-go
   version: a539ee1a749a2b895533f979515ac7e6e0f5b650
+- name: github.com/fatih/structs
+  version: 7e5a8eef611ee84dd359503f3969f80df4c50723
 testImports: []

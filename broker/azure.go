@@ -1,9 +1,9 @@
 package broker
 
 import (
-	"encoding/json"
+	"errors"
 	"fmt"
-	"strconv"
+	"time"
 
 	"code.cloudfoundry.org/lager"
 	"github.com/Azure/azure-sdk-for-go/arm/resources/resources"
@@ -32,20 +32,6 @@ const (
 	AzureUSGovernment = "AzureUSGovernment"
 	AzureStack        = "AzureStack"
 )
-
-type BlockchainConfiguration struct {
-	NamePrefix                string `json:"namePrefix"`
-	AdminUsername             string `json:"adminUsername"`
-	AdminPassword             string `json:"adminPassword"`
-	EthereumAccountPsswd      string `json:"ethereumAccountPsswd"`
-	EthereumAccountPassphrase string `json:"ethereumAccountPassphrase"`
-	EthereumNetworkID         string `json:"ethereumNetworkID"`
-	NumConsortiumMembers      string `json:"numConsortiumMembers"`
-	NumMiningNodesPerMember   string `json:"numMiningNodesPerMember"`
-	MnNodeVMSize              string `json:"mnNodeVMSize"`
-	NumTXNodes                string `json:"numTXNodes"`
-	TxNodeVMSize              string `json:"txNodeVMSize"`
-}
 
 type APIVersions struct {
 	Storage         string
@@ -117,44 +103,34 @@ type AzureAccount struct {
 	EnableEncryption          bool
 	baseURL                   string
 	resourcesManagementClient *resources.DeploymentsClient
-	blockchainconfiguration   *BlockchainConfiguration
+	groupsClient              *resources.GroupsClient
+	DeploymentResult          <-chan resources.DeploymentExtended
+	DeploymentError           <-chan error
+	blockchainConfiguration   *BlockchainConfiguration
 }
 
-func NewAzureAccount(logger lager.Logger, cloudConfig *CloudConfig, configuration Configuration) (*AzureAccount, error) {
-	logger = logger.Session("azure-account", lager.Data{
-		"CloudConfig": cloudConfig,
-	})
+func NewAzureAccount(logger lager.Logger, cloudConfig CloudConfig, configuration Configuration, blockchainConfiguration BlockchainConfiguration) (*AzureAccount, error) {
+	logger = logger.Session("new-azure-account")
+	logger.Info("start")
+	defer logger.Info("end", nil)
 	azureAccount := AzureAccount{
 		logger:                    logger,
-		cloudConfig:               cloudConfig,
+		cloudConfig:               &cloudConfig,
 		SubscriptionID:            configuration.SubscriptionID,
 		ResourceGroupName:         configuration.ResourceGroupName,
-		UseHTTPS:                  true,
+		UseHTTPS:                  configuration.UseHTTPS,
 		Location:                  locationWestUS,
 		CustomDomainName:          "",
-		UseSubDomain:              false,
-		EnableEncryption:          false,
+		UseSubDomain:              configuration.UseSubDomain,
+		EnableEncryption:          configuration.EnableEncryption,
 		baseURL:                   "",
 		resourcesManagementClient: nil,
-		blockchainconfiguration:   nil,
-	}
-	if configuration.UseHTTPS != "" {
-		if ret, err := strconv.ParseBool(configuration.UseHTTPS); err == nil {
-			azureAccount.UseHTTPS = ret
-		}
+		blockchainConfiguration:   &blockchainConfiguration,
+		DeploymentResult:          nil,
+		DeploymentError:           nil,
 	}
 	if configuration.Location != "" {
 		azureAccount.Location = configuration.Location
-	}
-	if configuration.UseSubDomain != "" {
-		if ret, err := strconv.ParseBool(configuration.UseSubDomain); err == nil {
-			azureAccount.UseSubDomain = ret
-		}
-	}
-	if configuration.EnableEncryption != "" {
-		if ret, err := strconv.ParseBool(configuration.EnableEncryption); err == nil {
-			azureAccount.EnableEncryption = ret
-		}
 	}
 
 	if err := azureAccount.initManagementClient(); err != nil {
@@ -166,7 +142,7 @@ func NewAzureAccount(logger lager.Logger, cloudConfig *CloudConfig, configuratio
 func (account *AzureAccount) initManagementClient() error {
 	logger := account.logger.Session("init-management-client")
 	logger.Info("start")
-	defer logger.Info("end", nil)
+	defer logger.Info("end")
 
 	environment := account.cloudConfig.Azure.Environment
 	tenantID := account.cloudConfig.Azure.TenanID
@@ -183,7 +159,7 @@ func (account *AzureAccount) initManagementClient() error {
 	}
 
 	resourceManagerEndpointURL := Environments[environment].ResourceManagerEndpointURL
-	spt, err := adal.NewServicePrincipalToken(*oauthConfig, clientID, clientSecret, resourceManagerEndpointURL, nil)
+	spt, err := adal.NewServicePrincipalToken(*oauthConfig, clientID, clientSecret, resourceManagerEndpointURL)
 	if err != nil {
 		logger.Error("new-oauth-service-principal-token", err, lager.Data{
 			"Environment":                environment,
@@ -195,30 +171,59 @@ func (account *AzureAccount) initManagementClient() error {
 	}
 	client := resources.NewDeploymentsClientWithBaseURI(resourceManagerEndpointURL, account.SubscriptionID)
 	account.resourcesManagementClient = &client
-	account.resourcesManagementClient.Authorizer = autorest.NewBearerAuthorizer((spt))
+	account.resourcesManagementClient.Authorizer = autorest.NewBearerAuthorizer(spt)
+	groupsClient := resources.NewGroupsClientWithBaseURI(resourceManagerEndpointURL, account.SubscriptionID)
+	account.groupsClient = &groupsClient
+	account.groupsClient.Authorizer = autorest.NewBearerAuthorizer(spt)
 	return nil
 }
 
-func (account *AzureAccount) Create() (<-chan resources.DeploymentExtended, <-chan error, error) {
+func (account *AzureAccount) Exist() (bool, error) {
+	logger := account.logger.Session("Exist")
+	logger.Info("start")
+	defer logger.Info("end")
+
+	result, err := account.groupsClient.CheckExistence(account.ResourceGroupName)
+	if err != nil {
+		logger.Error("error-in-check-exist", err, lager.Data{
+			"ResourceGroupName": account.ResourceGroupName,
+		})
+		return false, fmt.Errorf("Error in broker.Exist: %v", err)
+	}
+	if result.StatusCode < 400 {
+		// 20X for existence
+		return true, nil
+	}
+	// 40X for not existence
+	return false, nil
+}
+
+func (account *AzureAccount) Create() error {
 	logger := account.logger.Session("Craete")
 	logger.Info("Start")
 	defer logger.Info("end")
 
-	var parameters map[string]interface{}
-	jsonParameters, err := json.Marshal(account.blockchainconfiguration)
-	if err != nil {
-		logger.Error("convert-config-to-json", err, lager.Data{
-			"Configuration": account.blockchainconfiguration,
-		})
-		return nil, nil, fmt.Errorf("Error in Create: %v", err)
+	// check if group exists
+	parameter := resources.Group{
+		Location: &account.Location,
 	}
-	err = json.Unmarshal(jsonParameters, parameters)
+
+	existed, err := account.Exist()
 	if err != nil {
-		logger.Error("convert-json-to-map[string]interface{}", err, lager.Data{
-			"Configuration": account.blockchainconfiguration,
-		})
-		return nil, nil, fmt.Errorf("Error in Create: %v", err)
+		return err
 	}
+	if !existed {
+		_, err := account.groupsClient.CreateOrUpdate(account.ResourceGroupName, parameter)
+		if err != nil {
+			logger.Error("error-in-create-resource-group", err, lager.Data{
+				"ResourceGroupName": account.ResourceGroupName,
+				"parameter":         parameter,
+			})
+			return fmt.Errorf("Error in broker.Create: %v", err)
+		}
+	}
+
+	parameters := struct2map(*account.blockchainConfiguration)
 	deploymentProps := resources.DeploymentProperties{
 		TemplateLink: &resources.TemplateLink{
 			URI:            to.StringPtr("https://raw.githubusercontent.com/Azure/azure-quickstart-templates/master/ethereum-consortium-blockchain-network/azuredeploy.json"),
@@ -228,11 +233,17 @@ func (account *AzureAccount) Create() (<-chan resources.DeploymentExtended, <-ch
 		Mode:       resources.Incremental,
 	}
 	cancel := make(chan struct{})
-	deploymentExtended, chanerr := account.resourcesManagementClient.CreateOrUpdate(account.ResourceGroupName,
+	account.resourcesManagementClient.CreateOrUpdate(account.ResourceGroupName,
 		deploymentName,
 		resources.Deployment{Properties: &deploymentProps},
 		cancel)
-	return deploymentExtended, chanerr, nil
+	// err = <-errchan
+	// if err != nil {
+	// 	return fmt.Errorf("Error in broker.Create: %v", err)
+	// }
+
+	cancel <- struct{}{}
+	return nil
 }
 
 func (account *AzureAccount) Delete() (<-chan autorest.Response, <-chan error) {
@@ -241,5 +252,61 @@ func (account *AzureAccount) Delete() (<-chan autorest.Response, <-chan error) {
 	defer logger.Info("end")
 
 	cancel := make(chan struct{})
+
 	return account.resourcesManagementClient.Delete(account.ResourceGroupName, deploymentName, cancel)
+}
+
+func (account *AzureAccount) Get() (result resources.DeploymentExtended, err error) {
+	return account.resourcesManagementClient.Get(account.ResourceGroupName, deploymentName)
+}
+
+func isAccepted(cancel chan struct{}, fn func() (bool, error)) (bool, error) {
+	timeout := time.After(5 * time.Second)
+	tick := time.Tick(500 * time.Millisecond)
+
+	for {
+		select {
+		case <-timeout:
+			cancel <- struct{}{}
+			return false, errors.New("request time out")
+		case <-tick:
+			ok, err := fn()
+			if err != nil {
+				return false, err
+			}
+			if ok {
+				return ok, nil
+			}
+		}
+	}
+}
+
+func struct2map(blockchainConfiguration BlockchainConfiguration) map[string]interface{} {
+	result := make(map[string]interface{})
+
+	result["namePrefix"] = makeStringParameterValueString(blockchainConfiguration.namePrefix)
+	result["adminUsername"] = makeStringParameterValueString(blockchainConfiguration.adminUsername)
+	result["adminPassword"] = makeStringParameterValueString(blockchainConfiguration.adminPassword)
+	result["ethereumAccountPsswd"] = makeStringParameterValueString(blockchainConfiguration.ethereumAccountPsswd)
+	result["ethereumAccountPassphrase"] = makeStringParameterValueString(blockchainConfiguration.ethereumAccountPassphrase)
+	result["ethereumNetworkID"] = makeStringParameterValueUint64(blockchainConfiguration.ethereumNetworkID)
+	result["numConsortiumMembers"] = makeStringParameterValueUint64(blockchainConfiguration.numConsortiumMembers)
+	result["numMiningNodesPerMember"] = makeStringParameterValueUint64(blockchainConfiguration.numMiningNodesPerMember)
+	result["mnNodeVMSize"] = makeStringParameterValueString(blockchainConfiguration.mnNodeVMSize)
+	result["numTXNodes"] = makeStringParameterValueUint64(blockchainConfiguration.numTXNodes)
+	result["txNodeVMSize"] = makeStringParameterValueString(blockchainConfiguration.txNodeVMSize)
+
+	return result
+}
+
+func makeStringParameterValueString(value string) map[string]string {
+	result := make(map[string]string)
+	result["value"] = value
+	return result
+}
+
+func makeStringParameterValueUint64(value uint64) map[string]uint64 {
+	result := make(map[string]uint64)
+	result["value"] = value
+	return result
 }

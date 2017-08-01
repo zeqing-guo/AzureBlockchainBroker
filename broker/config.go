@@ -5,10 +5,60 @@ import (
 	"strings"
 )
 
+type BlockchainConfiguration struct {
+	namePrefix                string
+	adminUsername             string
+	adminPassword             string
+	ethereumAccountPsswd      string
+	ethereumAccountPassphrase string
+	ethereumNetworkID         uint64
+	numConsortiumMembers      uint64
+	numMiningNodesPerMember   uint64
+	mnNodeVMSize              string
+	numTXNodes                uint64
+	txNodeVMSize              string
+}
+
+func NewBlockchainConfiguration(
+	namePrefix string,
+	adminUsername string,
+	adminPassword string,
+	ethereumAccountPsswd string,
+	ethereumAccountPassphrase string,
+	ethereumNetworkID uint64,
+	numConsortiumMembers uint64,
+	numMiningNodesPerMember uint64,
+	mnNodeVMSize string,
+	numTXNodes uint64,
+	txNodeVMSize string,
+) *BlockchainConfiguration {
+	blockchainConfiguration := new(BlockchainConfiguration)
+
+	blockchainConfiguration.namePrefix = namePrefix
+	blockchainConfiguration.adminUsername = adminUsername
+	blockchainConfiguration.adminPassword = adminPassword
+	blockchainConfiguration.ethereumAccountPsswd = ethereumAccountPsswd
+	blockchainConfiguration.ethereumAccountPassphrase = ethereumAccountPassphrase
+	blockchainConfiguration.ethereumNetworkID = ethereumNetworkID
+	blockchainConfiguration.numConsortiumMembers = numConsortiumMembers
+	blockchainConfiguration.numMiningNodesPerMember = numMiningNodesPerMember
+	blockchainConfiguration.mnNodeVMSize = mnNodeVMSize
+	blockchainConfiguration.numTXNodes = numTXNodes
+	blockchainConfiguration.txNodeVMSize = txNodeVMSize
+	return blockchainConfiguration
+}
+
 type CloudConfig struct {
 	Azure      AzureConfig
-	Control    ControlConfig
 	AzureStack AzureStackConfig
+}
+
+func NewCloudConfig(azureConfig AzureConfig, azureStack AzureStackConfig) *CloudConfig {
+	cloudConfig := new(CloudConfig)
+
+	cloudConfig.AzureStack = azureStack
+	cloudConfig.Azure = azureConfig
+	return cloudConfig
 }
 
 type AzureConfig struct {
@@ -23,11 +73,25 @@ type AzureConfig struct {
 type Configuration struct {
 	SubscriptionID    string `json:"subscription_id"`
 	ResourceGroupName string `json:"resource_group_name"`
-	UseHTTPS          string `json:"use_https"` // bool
+	UseHTTPS          bool   `json:"use_https"` // bool
 	Location          string `json:"location"`
 	CustomDomainName  string `json:"custom_domain_name"`
-	UseSubDomain      string `json:"use_sub_domain"`    // bool
-	EnableEncryption  string `json:"enable_encryption"` // bool
+	UseSubDomain      bool   `json:"use_sub_domain"`    // bool
+	EnableEncryption  bool   `json:"enable_encryption"` // bool
+}
+
+func NewConfiguration(subscriptionID, resourceGroupName string, useHTTPS bool, location, customDomainName string, useSubDomain, enableEncryption bool) *Configuration {
+	config := new(Configuration)
+
+	config.SubscriptionID = subscriptionID
+	config.ResourceGroupName = resourceGroupName
+	config.UseHTTPS = useHTTPS
+	config.Location = location
+	config.CustomDomainName = customDomainName
+	config.UseSubDomain = useSubDomain
+	config.EnableEncryption = enableEncryption
+
+	return config
 }
 
 func NewAzureConfig(environment, tenanID, clientID, clientSecret, defaultSubscriptionID, defaultResourceGroupName string) *AzureConfig {
@@ -62,25 +126,6 @@ func (config *AzureConfig) Validate() error {
 		return errors.New("Missing required parameters: " + strings.Join(missingKeys, ", "))
 	}
 	return nil
-}
-
-type ControlConfig struct {
-	AllowCreateStorageAccount bool
-	AllowCreateFileShare      bool
-	AllowDeleteStorageAccount bool
-	AllowDeleteFileShare      bool
-}
-
-func NewControlConfig(allowCreateStorageAccount, allowCreateFileShare, allowDeleteStorageAccount, allowDeleteFileShare bool) *ControlConfig {
-	myConf := new(ControlConfig)
-
-	// TBD: Now this broker does not support to create storage account if it does not exist
-	myConf.AllowCreateStorageAccount = false
-	myConf.AllowCreateFileShare = allowCreateFileShare
-	myConf.AllowDeleteStorageAccount = allowDeleteStorageAccount
-	myConf.AllowDeleteFileShare = allowDeleteFileShare
-
-	return myConf
 }
 
 type AzureStackConfig struct {
