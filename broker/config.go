@@ -5,7 +5,7 @@ import (
 	"strings"
 )
 
-type BlockchainConfiguration struct {
+type BlockchainConfig struct {
 	namePrefix                string
 	adminUsername             string
 	adminPassword             string
@@ -19,7 +19,7 @@ type BlockchainConfiguration struct {
 	txNodeVMSize              string
 }
 
-func NewBlockchainConfiguration(
+func NewBlockchainConfig(
 	namePrefix string,
 	adminUsername string,
 	adminPassword string,
@@ -31,21 +31,21 @@ func NewBlockchainConfiguration(
 	mnNodeVMSize string,
 	numTXNodes uint64,
 	txNodeVMSize string,
-) *BlockchainConfiguration {
-	blockchainConfiguration := new(BlockchainConfiguration)
+) *BlockchainConfig {
+	blockchainConfig := new(BlockchainConfig)
 
-	blockchainConfiguration.namePrefix = namePrefix
-	blockchainConfiguration.adminUsername = adminUsername
-	blockchainConfiguration.adminPassword = adminPassword
-	blockchainConfiguration.ethereumAccountPsswd = ethereumAccountPsswd
-	blockchainConfiguration.ethereumAccountPassphrase = ethereumAccountPassphrase
-	blockchainConfiguration.ethereumNetworkID = ethereumNetworkID
-	blockchainConfiguration.numConsortiumMembers = numConsortiumMembers
-	blockchainConfiguration.numMiningNodesPerMember = numMiningNodesPerMember
-	blockchainConfiguration.mnNodeVMSize = mnNodeVMSize
-	blockchainConfiguration.numTXNodes = numTXNodes
-	blockchainConfiguration.txNodeVMSize = txNodeVMSize
-	return blockchainConfiguration
+	blockchainConfig.namePrefix = namePrefix
+	blockchainConfig.adminUsername = adminUsername
+	blockchainConfig.adminPassword = adminPassword
+	blockchainConfig.ethereumAccountPsswd = ethereumAccountPsswd
+	blockchainConfig.ethereumAccountPassphrase = ethereumAccountPassphrase
+	blockchainConfig.ethereumNetworkID = ethereumNetworkID
+	blockchainConfig.numConsortiumMembers = numConsortiumMembers
+	blockchainConfig.numMiningNodesPerMember = numMiningNodesPerMember
+	blockchainConfig.mnNodeVMSize = mnNodeVMSize
+	blockchainConfig.numTXNodes = numTXNodes
+	blockchainConfig.txNodeVMSize = txNodeVMSize
+	return blockchainConfig
 }
 
 type CloudConfig struct {
@@ -70,7 +70,7 @@ type AzureConfig struct {
 	DefaultResourceGroupName string
 }
 
-type Configuration struct {
+type ResourceConfig struct {
 	SubscriptionID    string `json:"subscription_id"`
 	ResourceGroupName string `json:"resource_group_name"`
 	UseHTTPS          bool   `json:"use_https"` // bool
@@ -80,8 +80,8 @@ type Configuration struct {
 	EnableEncryption  bool   `json:"enable_encryption"` // bool
 }
 
-func NewConfiguration(subscriptionID, resourceGroupName string, useHTTPS bool, location, customDomainName string, useSubDomain, enableEncryption bool) *Configuration {
-	config := new(Configuration)
+func NewResourceConfig(subscriptionID string, resourceGroupName string, useHTTPS bool, location string, customDomainName string, useSubDomain bool, enableEncryption bool) *ResourceConfig {
+	config := new(ResourceConfig)
 
 	config.SubscriptionID = subscriptionID
 	config.ResourceGroupName = resourceGroupName
@@ -165,4 +165,16 @@ func (config *AzureStackConfig) Validate() error {
 		return errors.New("Missing required parameters when 'environment' is 'AzureStack': " + strings.Join(missingKeys, ", "))
 	}
 	return nil
+}
+
+type Link struct {
+	uri            string
+	contentVersion string
+}
+
+func NewLink(uri, contentVersion string) (link *Link) {
+	link = new(Link)
+	link.contentVersion = contentVersion
+	link.uri = uri
+	return link
 }
