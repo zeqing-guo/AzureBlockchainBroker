@@ -1,6 +1,7 @@
 ---
 buildpack: go_buildpack
 env:
+  GOVERSION: go1.8
   LOGLEVEL: info
   SERVICENAME: azureblockchain
   USERNAME: admin
