@@ -1,5 +1,5 @@
 hash: 082f07bf04b7ca2089ad962b6aa99bd11e0636c5e3bce1d1bf23b3d4be64ea93
-updated: 2017-08-17T02:29:57.479756458Z
+updated: 2017-08-22T06:44:06.553766259Z
 imports:
 - name: code.cloudfoundry.org/debugserver
   version: 70715da12ee9e99858f2ba1013334776c73b6922
@@ -7,10 +7,17 @@ imports:
   version: 438ab98cc3b9b81e97c2281422b2722cd8e80ed8
   subpackages:
   - lagerflags
+- name: github.com/Azure/go-autorest
+  version: f6e08fe5e4d45c9a66e40196d3fed5f37331d224
+  subpackages:
+  - autorest
+  - autorest/adal
+- name: github.com/dgrijalva/jwt-go
+  version: a539ee1a749a2b895533f979515ac7e6e0f5b650
 - name: github.com/gorilla/context
   version: 08b5f424b9271eedf6f9f0ce86cb9396ed337a42
 - name: github.com/gorilla/mux
-  version: cf79e51a62d8219d52060dfc1b4e810414ba2d15
+  version: ac112f7d75a0714af1bd86ab17749b31f7809640
 - name: github.com/pivotal-cf/brokerapi
   version: 6d25b9398d9f05880ca8f480134a88c8d2df69bc
   subpackages:
@@ -23,7 +30,10 @@ imports:
   - sigmon
 - name: golang.org/x/net
   version: 1c05540f6879653db88113bc4a2b70aec4bd491f
+  repo: https://github.com/golang/net.git
+  vcs: git
   subpackages:
+  - .
   - publicsuffix
 - name: gopkg.in/resty.v0
   version: cf81ed0a604d373be63b4c036c6b05c06520615f
