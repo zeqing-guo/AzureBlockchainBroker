@@ -23,6 +23,8 @@ const (
 	resourceNotFound            = "StatusCode=404"
 	fileRequestTimeoutInSeconds = 60
 	locationWestUS              = "westus"
+	blockchainTemplate          = "https://github.com/Azure/azure-quickstart-templates/raw/master/ethereum-consortium-blockchain-network/azuredeploy.json"
+	templateVersion             = "1.0.0.0"
 )
 
 var (
@@ -274,12 +276,9 @@ func (c *AzureRESTClient) CheckResourceStatus(resourceGroupName string) (string,
 	queries := map[string]string{
 		"api-version": Environments[c.cloudConfig.Azure.Environment].APIVersions.Group,
 	}
-	hostURL := fmt.Sprintf("%s/subscriptions/%s/resourceGroups/%s/providers/%s/%s/%s",
+	hostURL := fmt.Sprintf("%s/subscriptions/%s/resourceGroups/%s",
 		Environments[c.cloudConfig.Azure.Environment].ResourceManagerEndpointURL,
 		c.resourceConfig.SubscriptionID,
-		c.resourceConfig.ResourceGroupName,
-		restAPIProvider,
-		restAPIDeployments,
 		resourceGroupName,
 	)
 
@@ -583,12 +582,11 @@ func (d *DeploymentClient) Create(deploymentName string) (err error) {
 		if err != nil {
 			return fmt.Errorf("Error in create group: %v", err)
 		}
-		// TODO: add polling operation
 	}
 
 	// deploy template
 	parameters := struct2map(d.blockchainConfig)
-	link := NewLink("https://github.com/Azure/azure-quickstart-templates/raw/master/ethereum-consortium-blockchain-network/azuredeploy.json", "1.0.0.0")
+	link := NewLink(blockchainTemplate, templateVersion)
 	_, err = azureRESTClient.DeployTemplate(deploymentName, nil, link, &parameters, nil)
 	if err != nil {
 		return fmt.Errorf("Error in deploy template: %v", err)

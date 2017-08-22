@@ -2,7 +2,7 @@ package main
 
 import (
 	"flag"
-	// "fmt"
+	"fmt"
 	"os"
 	// "strconv"
 
@@ -22,7 +22,7 @@ import (
 // Broker
 var atAddress = flag.String(
 	"listenAddr",
-	"0.0.0.0:$PORT",
+	"0.0.0.0:9000",
 	"host:port to serve service broker API",
 )
 
@@ -212,7 +212,150 @@ func parseEnvironment() {
 }
 
 func checkParams() {
+	vmSizes := []string{
+		"Standard_A1",
+		"Standard_A2",
+		"Standard_A3",
+		"Standard_A4",
+		"Standard_A5",
+		"Standard_A6",
+		"Standard_A7",
+		"Standard_D1",
+		"Standard_D2",
+		"Standard_D3",
+		"Standard_D4",
+		"Standard_D11",
+		"Standard_D12",
+		"Standard_D13",
+		"Standard_D14",
+		"Standard_D1_v2",
+		"Standard_D2_v2",
+		"Standard_D3_v2",
+		"Standard_D4_v2",
+		"Standard_D5_v2",
+		"Standard_D11_v2",
+		"Standard_D12_v2",
+		"Standard_D13_v2",
+		"Standard_D14_v2",
+		"Standard_D15_v2",
+		"Standard_F1",
+		"Standard_F2",
+		"Standard_F4",
+		"Standard_F8",
+		"Standard_F16",
+	}
+	// guarantee required parameters are filled
+	if *adminPassword == "" {
+		fmt.Fprint(os.Stderr, "\nError: adminPassword is required\n\n")
+		flag.Usage()
+		os.Exit(1)
+	}
+	if *clientID == "" {
+		fmt.Fprint(os.Stderr, "\nError: clientID is required\n\n")
+		flag.Usage()
+		os.Exit(1)
+	}
+	if *clientSecret == "" {
+		fmt.Fprint(os.Stderr, "\nError: clientSecret is required\n\n")
+		flag.Usage()
+		os.Exit(1)
+	}
+	if *ethereumAccountPsswd == "" {
+		fmt.Fprint(os.Stderr, "\nError: ethereumAccountPsswd is required\n\n")
+		flag.Usage()
+		os.Exit(1)
+	}
+	if *ethereumAccountPassphrase == "" {
+		fmt.Fprint(os.Stderr, "\nError: ethereumAccountPassphrase is required\n\n")
+		flag.Usage()
+		os.Exit(1)
+	}
+	if *namePrefix == "" {
+		fmt.Fprint(os.Stderr, "\nError: namePrefix is required\n\n")
+		flag.Usage()
+		os.Exit(1)
+	}
+	if *serviceID == "" {
+		fmt.Fprint(os.Stderr, "\nError: serviceID is required\n\n")
+		flag.Usage()
+		os.Exit(1)
+	}
+	if *serviceName == "" {
+		fmt.Fprint(os.Stderr, "\nError: serviceName is required\n\n")
+		flag.Usage()
+		os.Exit(1)
+	}
+	if *subscriptionID == "" {
+		fmt.Fprint(os.Stderr, "\nError: subscriptionID is required\n\n")
+		flag.Usage()
+		os.Exit(1)
+	}
+	if *tenantID == "" {
+		fmt.Fprint(os.Stderr, "\nError: tenantID is required\n\n")
+		flag.Usage()
+		os.Exit(1)
+	}
 
+	// template parameters requirements
+	if len(*namePrefix) > 6 {
+		fmt.Fprint(os.Stderr, "\nnamePrefix should be 6 alphanumeric characters or less\n\n")
+		flag.Usage()
+		os.Exit(1)
+	}
+	if len(*adminUsername) < 1 || len(*adminUsername) > 64 {
+		fmt.Fprint(os.Stderr, "\nadminUsername should be not be void and 64 characters or less\n\n")
+		flag.Usage()
+		os.Exit(1)
+	}
+	if len(*adminPassword) < 12 || len(*adminPassword) > 72 {
+		fmt.Fprint(os.Stderr, "\nadminPassword should be in [12, 64]\n\n")
+		flag.Usage()
+		os.Exit(1)
+	}
+	if len(*ethereumAccountPsswd) < 12 {
+		fmt.Fprint(os.Stderr, "\nethereumAccountPsswd should be 12 alphanumeric characters or more\n\n")
+		flag.Usage()
+		os.Exit(1)
+	}
+	if len(*ethereumAccountPassphrase) < 12 {
+		fmt.Fprint(os.Stderr, "\nethereumAccountPassphrase should be 12 alphanumeric characters or more\n\n")
+		flag.Usage()
+		os.Exit(1)
+	}
+	if *ethereumNetworkID < 5 || *ethereumNetworkID >= 2^31 {
+		fmt.Fprint(os.Stderr, "\nethereumNetworkID should be in [5, 2^31)\n\n")
+		flag.Usage()
+		os.Exit(1)
+	}
+	if *numConsortiumMembers < 2 || *numConsortiumMembers > 5 {
+		fmt.Fprint(os.Stderr, "\nnumConsortiumMembers should be in [2, 5]\n\n")
+		flag.Usage()
+		os.Exit(1)
+	}
+	if *numMiningNodesPerMember < 1 || *numMiningNodesPerMember > 19 {
+		fmt.Fprint(os.Stderr, "\nnumMiningNodesPerMember should be in [1, 19]\n\n")
+		flag.Usage()
+		os.Exit(1)
+	}
+	if !stringInSlice(*mnNodeVMSize, vmSizes) {
+		fmt.Fprint(os.Stderr, "\nUnsupported mining node VM size\n\n")
+		flag.Usage()
+		os.Exit(1)
+	}
+	if !stringInSlice(*txNodeVMSize, vmSizes) {
+		fmt.Fprint(os.Stderr, "\nUnsupported transaction node VM size\n\n")
+		flag.Usage()
+		os.Exit(1)
+	}
+}
+
+func stringInSlice(a string, list []string) bool {
+	for _, b := range list {
+		if b == a {
+			return true
+		}
+	}
+	return false
 }
 
 func createServer(logger lager.Logger) ifrit.Runner {

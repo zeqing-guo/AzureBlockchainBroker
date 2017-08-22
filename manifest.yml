@@ -1,0 +1,28 @@
+---
+buildpack: go_buildpack
+env:
+  LOGLEVEL: info
+  SERVICENAME: azureblockchain
+  USERNAME: admin
+  PASSWORD: admin
+  # azure
+  TENANTID: replace-me
+  CLIENTID: replace-me
+  CLIENTSECRET: replace-me
+
+  # resource
+  SUBSCRIPTIONID: replace-me
+  LOCATION: replace-me
+
+  # blockchain
+  NAMEPREFIX: replace-me
+  ADMINUSERNAME: replace-me
+  ADMINPASSWORD: repalce-me
+  ETHEREUMACCOUNTPSSWD: replace-me
+  ETHEREUMACCOUNTPASSPHRASE: replace-me
+  ETHEREUMNETWORKID: replace-me
+  NUMCONSORTIUMMEMBERS: replace-me
+  NUMMININGNODESPERMEMBER: replace-me
+  MNNODEVMSIZE: replace-me
+  NUMTXNODES: replace-me
+  TXNODEVMSIZE: replace-me

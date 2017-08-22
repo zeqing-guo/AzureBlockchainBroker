@@ -29,29 +29,39 @@ EOF
 }
 
 echo "start to test service broker\n"
-# echo "==============================catalog=============================="
-# curl "http://admin:admin@127.0.0.1:9000/v2/catalog"
-# echo "==============================provision=============================="
-# curl -H "Content-Type:application/json" \
-# -X PUT \
-# -d "$(generate_provision_post_data)" "http://admin:admin@127.0.0.1:9000/v2/service_instances/$instance_id?accepts_incomplete=true"
-# echo "==============================last_operation=============================="
-# curl "http://admin:admin@127.0.0.1:9000/v2/service_instances/$instance_id/last_operation?operation=provision:$instance_id"
-# echo "sleep 5 min for provision"
-# sleep 5m 
-# echo "check status second time"
-# curl "http://admin:admin@127.0.0.1:9000/v2/service_instances/$instance_id/last_operation"
-echo "==============================bind=============================="
-curl -H "Content-Type:application/json" \
--X PUT \
--d "$(generate_bind_post_data)" "http://admin:admin@127.0.0.1:9000/v2/service_instances/$instance_id/service_bindings/$binding_id"
-echo "==============================unbind=============================="
-curl -X DELETE "http://admin:admin@127.0.0.1:9000/v2/service_instances/$instance_id/service_bindings/$binding_id?service_id=$service_id&plan_id=plan_id"
-echo "==============================deprovisioning=============================="
-curl -X DELETE "http://admin:admin@127.0.0.1:9000/v2/service_instances/$instance_id?accepts_incomplete=true&service_id=$service_id&plan_id=plan_id"
-echo "==============================last_operation=============================="
-curl "http://admin:admin@127.0.0.1:9000/v2/service_instances/$instance_id/last_operation?operation=deprovision:$instance_id"
-echo "sleep 2 min for deprovision"
-sleep 2m 
-echo "check status second time"
-curl "http://admin:admin@127.0.0.1:9000/v2/service_instances/$instance_id/last_operation?operation=provision:$instance_id"
+echo "==============================catalog=============================="
+curl "http://admin:admin@127.0.0.1:9000/v2/catalog"
+
+if [ "$1" = "provision" ]
+then
+	echo "test provision phrase"
+	echo "==============================provision=============================="
+	curl -H "Content-Type:application/json" \
+	-X PUT \
+	-d "$(generate_provision_post_data)" "http://admin:admin@127.0.0.1:9000/v2/service_instances/$instance_id?accepts_incomplete=true"
+	echo "==============================last_operation=============================="
+	curl "http://admin:admin@127.0.0.1:9000/v2/service_instances/$instance_id/last_operation?operation=provision:$instance_id"
+elif [ "$1" = "pollingProv" ]
+then
+	echo "==============================last_operation=============================="
+	curl "http://admin:admin@127.0.0.1:9000/v2/service_instances/$instance_id/last_operation?operation=provision:$instance_id"
+elif [ "$1" = "pollingDeprov" ]
+then
+	echo "==============================last_operation=============================="
+	curl "http://admin:admin@127.0.0.1:9000/v2/service_instances/$instance_id/last_operation?operation=deprovision:$instance_id"
+elif [ "$1" = "deprovision" ]
+then 
+	echo "test binding, unbinding and deprovision phrase"
+	echo "==============================bind=============================="
+	curl -H "Content-Type:application/json" \
+	-X PUT \
+	-d "$(generate_bind_post_data)" "http://admin:admin@127.0.0.1:9000/v2/service_instances/$instance_id/service_bindings/$binding_id"
+	echo "==============================unbind=============================="
+	curl -X DELETE "http://admin:admin@127.0.0.1:9000/v2/service_instances/$instance_id/service_bindings/$binding_id?service_id=$service_id&plan_id=plan_id"
+	echo "==============================deprovisioning=============================="
+	curl -X DELETE "http://admin:admin@127.0.0.1:9000/v2/service_instances/$instance_id?accepts_incomplete=true&service_id=$service_id&plan_id=plan_id"
+	echo "==============================last_operation=============================="
+	curl "http://admin:admin@127.0.0.1:9000/v2/service_instances/$instance_id/last_operation?operation=deprovision:$instance_id"
+else
+	echo "./curl.sh provision/deprovision/pollingProv/pollingDeprov"
+fi
