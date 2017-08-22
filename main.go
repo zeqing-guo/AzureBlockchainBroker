@@ -4,14 +4,11 @@ import (
 	"flag"
 	"fmt"
 	"os"
-	// "strconv"
 
 	"code.cloudfoundry.org/debugserver"
 	"code.cloudfoundry.org/lager"
 	"code.cloudfoundry.org/lager/lagerflags"
 	"github.com/pivotal-cf/brokerapi"
-	// "github.com/Azure/go-autorest/autorest"
-	// "github.com/Azure/go-autorest/autorest/adal"
 	"github.com/tedsuo/ifrit"
 	"github.com/tedsuo/ifrit/grouper"
 	"github.com/tedsuo/ifrit/http_server"
@@ -178,6 +175,16 @@ func main() {
 
 	checkParams()
 
+	// var lagerLogLevel lager.LogLevel
+	// if *logLevel == "info" {
+	// lagerLogLevel = lager.INFO
+	// } else if *logLevel == "debug" {
+	// lagerLogLevel = lager.DEBUG
+	// } else if *logLevel == "error" {
+	// lagerLogLevel = lager.ERROR
+	// } else {
+	// lagerLogLevel = lager.FATAL
+	// }
 	sink, err := lager.NewRedactingWriterSink(os.Stdout, lager.INFO, nil, nil)
 	if err != nil {
 		panic(err)
@@ -244,6 +251,13 @@ func checkParams() {
 		"Standard_F8",
 		"Standard_F16",
 	}
+	// logLevels := []string{
+	// 	"info",
+	// 	"error",
+	// 	"debug",
+	// 	"fatal",
+	// }
+
 	// guarantee required parameters are filled
 	if *adminPassword == "" {
 		fmt.Fprint(os.Stderr, "\nError: adminPassword is required\n\n")
@@ -347,6 +361,11 @@ func checkParams() {
 		flag.Usage()
 		os.Exit(1)
 	}
+	// if !stringInSlice(*logLevel, logLevels) {
+	// fmt.Fprint(os.Stderr, "\nUnknow log level tag\n\n")
+	// flag.Usage()
+	// os.Exit(1)
+	// }
 }
 
 func stringInSlice(a string, list []string) bool {
