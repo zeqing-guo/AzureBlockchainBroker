@@ -61,15 +61,6 @@ func NewCloudConfig(azureConfig AzureConfig, azureStack AzureStackConfig) *Cloud
 	return cloudConfig
 }
 
-type AzureConfig struct {
-	Environment              string
-	TenanID                  string
-	ClientID                 string
-	ClientSecret             string
-	DefaultSubscriptionID    string
-	DefaultResourceGroupName string
-}
-
 type ResourceConfig struct {
 	SubscriptionID    string `json:"subscription_id"`
 	ResourceGroupName string `json:"resource_group_name"`
@@ -94,15 +85,38 @@ func NewResourceConfig(subscriptionID string, resourceGroupName string, useHTTPS
 	return config
 }
 
-func NewAzureConfig(environment, tenanID, clientID, clientSecret, defaultSubscriptionID, defaultResourceGroupName string) *AzureConfig {
+func (config *ResourceConfig) Validate() error {
+	missingKeys := []string{}
+	if config.SubscriptionID == "" {
+		missingKeys = append(missingKeys, "subscriptionID")
+	}
+	if config.ResourceGroupName == "" {
+		missingKeys = append(missingKeys, "resourceGroupName")
+	}
+	if config.Location == "" {
+		missingKeys = append(missingKeys, "location")
+	}
+
+	if len(missingKeys) > 0 {
+		return errors.New("Missing required parameters: " + strings.Join(missingKeys, ", "))
+	}
+	return nil
+}
+
+type AzureConfig struct {
+	Environment  string
+	TenanID      string
+	ClientID     string
+	ClientSecret string
+}
+
+func NewAzureConfig(environment, tenanID, clientID, clientSecret string) *AzureConfig {
 	myConf := new(AzureConfig)
 
 	myConf.Environment = environment
 	myConf.TenanID = tenanID
 	myConf.ClientID = clientID
 	myConf.ClientSecret = clientSecret
-	myConf.DefaultSubscriptionID = defaultSubscriptionID
-	myConf.DefaultResourceGroupName = defaultResourceGroupName
 
 	return myConf
 }

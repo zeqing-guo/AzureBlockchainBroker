@@ -13,17 +13,17 @@ env:
 
   # resource
   SUBSCRIPTIONID: replace-me
-  LOCATION: replace-me
+  LOCATION: southcentralus
 
   # blockchain
-  NAMEPREFIX: replace-me
-  ADMINUSERNAME: replace-me
-  ADMINPASSWORD: repalce-me
+  NAMEPREFIX: ethnet
+  ADMINUSERNAME: gethadmin
+  ADMINPASSWORD: replace-me
   ETHEREUMACCOUNTPSSWD: replace-me
   ETHEREUMACCOUNTPASSPHRASE: replace-me
-  ETHEREUMNETWORKID: replace-me
-  NUMCONSORTIUMMEMBERS: replace-me
-  NUMMININGNODESPERMEMBER: replace-me
-  MNNODEVMSIZE: replace-me
-  NUMTXNODES: replace-me
-  TXNODEVMSIZE: replace-me
+  ETHEREUMNETWORKID: 553289 
+  NUMCONSORTIUMMEMBERS: 2
+  NUMMININGNODESPERMEMBER: 1
+  MNNODEVMSIZE: "Standard_D1_v2" 
+  NUMTXNODES: 1
+  TXNODEVMSIZE: "Standard_D1_v2"
