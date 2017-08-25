@@ -75,30 +75,6 @@ func (b *ServiceBroker) Services(_ context.Context) []brokerapi.Service {
 	}}
 }
 
-func (b *ServiceBroker) Provision(context context.Context, instanceID string, details brokerapi.ProvisionDetails, asyncAllowed bool) (_ brokerapi.ProvisionedServiceSpec, e error) {
-	logger := b.logger.Session("provision").WithData(lager.Data{"instanceID": instanceID, "details": details, "asyncAllowed": asyncAllowed})
-	logger.Info("start")
-	defer logger.Info("end")
-
-	// Use async to process blockchain provision
-	b.mutex.Lock()
-	defer b.mutex.Unlock()
-
-	b.client.azureRESTClient.resourceConfig.ResourceGroupName = instanceID
-	err := b.client.Create(instanceID)
-	if err != nil {
-		logger.Error("create-blockchain-service", err)
-		return brokerapi.ProvisionedServiceSpec{}, err
-	}
-	lastOperation := instanceID
-	if err != nil {
-		logger.Error("get-status-url", err)
-		return brokerapi.ProvisionedServiceSpec{}, err
-	}
-
-	return brokerapi.ProvisionedServiceSpec{IsAsync: true, OperationData: "provision:" + lastOperation}, nil
-}
-
 func (b *ServiceBroker) LastOperation(_ context.Context, instanceID string, operationData string) (brokerapi.LastOperation, error) {
 	logger := b.logger.Session("last-operation", lager.Data{"instanceID": instanceID, "operationData": operationData})
 	logger.Info("start")
@@ -137,9 +113,35 @@ func (b *ServiceBroker) LastOperation(_ context.Context, instanceID string, oper
 		return brokerapi.LastOperation{State: brokerapi.Succeeded, Description: description}, nil
 	} else if state == "notfound" && operationDataArr[0] == "deprovision" {
 		return brokerapi.LastOperation{State: brokerapi.Succeeded, Description: description}, nil
+	} else if state == "failed" {
+		return brokerapi.LastOperation{State: brokerapi.Failed, Description: description}, nil
 	}
 
 	return brokerapi.LastOperation{State: brokerapi.InProgress, Description: description}, nil
+}
+
+func (b *ServiceBroker) Provision(context context.Context, instanceID string, details brokerapi.ProvisionDetails, asyncAllowed bool) (_ brokerapi.ProvisionedServiceSpec, e error) {
+	logger := b.logger.Session("provision").WithData(lager.Data{"instanceID": instanceID, "details": details, "asyncAllowed": asyncAllowed})
+	logger.Info("start")
+	defer logger.Info("end")
+
+	// Use async to process blockchain provision
+	b.mutex.Lock()
+	defer b.mutex.Unlock()
+
+	b.client.azureRESTClient.resourceConfig.ResourceGroupName = instanceID
+	err := b.client.Create(instanceID)
+	if err != nil {
+		logger.Error("create-blockchain-service", err)
+		return brokerapi.ProvisionedServiceSpec{}, err
+	}
+	lastOperation := instanceID
+	if err != nil {
+		logger.Error("get-status-url", err)
+		return brokerapi.ProvisionedServiceSpec{}, err
+	}
+
+	return brokerapi.ProvisionedServiceSpec{IsAsync: true, OperationData: "provision:" + lastOperation}, nil
 }
 
 func (b *ServiceBroker) Bind(context context.Context, instanceID string, bindingID string, details brokerapi.BindDetails) (_ brokerapi.Binding, e error) {

@@ -31,7 +31,7 @@ var serviceName = flag.String(
 
 var serviceID = flag.String(
 	"serviceID",
-	"06948cb0-cad7-4buh-leba-9ed8b5c345a3",
+	"abb90071-f3e2-4a31-99f0-fc5d552dbbba",
 	"ID of the service to register with cloud controller",
 )
 
@@ -319,6 +319,7 @@ func checkParams() {
 		flag.Usage()
 		os.Exit(1)
 	}
+	fmt.Println(ethereumNetworkID)
 	if (*ethereumNetworkID < 5) || (*ethereumNetworkID >= 2147483648) {
 		fmt.Fprint(os.Stderr, "\nethereumNetworkID should be in [5, 2^31)\n\n")
 		flag.Usage()

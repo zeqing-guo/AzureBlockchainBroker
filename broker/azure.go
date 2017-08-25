@@ -504,6 +504,9 @@ func (c *AzureRESTClient) CheckCompletion(deploymentName string) (string, error)
 	if err := json.Unmarshal(resp.Body(), &apiResponse); err != nil {
 		return "", fmt.Errorf("StatusCode: %d - %v\n\t%s", statusCode, resp, err)
 	}
+	logger.Info("response", lager.Data{
+		"responseBody": apiResponse,
+	})
 	provisioningState := apiResponse["properties"].(map[string]interface{})["provisioningState"]
 	return provisioningState.(string), nil
 }
@@ -534,6 +537,9 @@ func NewDeploymentClient(logger lager.Logger, cloudConfig CloudConfig, resourceC
 	logger = logger.Session("new-deployment-client")
 	logger.Info("start")
 	defer logger.Info("end")
+	logger.Info("blockchainConfig", lager.Data{
+		"configDetail": blockchainConfig,
+	})
 	deploymentClient := DeploymentClient{
 		logger:           logger,
 		blockchainConfig: blockchainConfig,

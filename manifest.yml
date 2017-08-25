@@ -1,4 +1,5 @@
 ---
+name: AzureBlockchainBroker
 buildpack: binary_buildpack
 env:
   # GOVERSION: go1.8
@@ -21,7 +22,7 @@ env:
   ADMINPASSWORD: replace-me
   ETHEREUMACCOUNTPSSWD: replace-me
   ETHEREUMACCOUNTPASSPHRASE: replace-me
-  ETHEREUMNETWORKID: 553289 
+  ETHEREUMNETWORKID: 553289
   NUMCONSORTIUMMEMBERS: 2
   NUMMININGNODESPERMEMBER: 1
   MNNODEVMSIZE: "Standard_D1_v2" 
