@@ -20,26 +20,26 @@ import (
 var atAddress = flag.String(
 	"listenAddr",
 	"0.0.0.0:9000",
-	"host:port to serve service broker API",
+	"(optional) - host:port to serve service broker API",
 )
 
 var serviceName = flag.String(
 	"serviceName",
 	"azureblockchain",
-	"name of the service to register with cloud controller",
+	"(optional) - name of the service to register with cloud controller",
 )
 
 var serviceID = flag.String(
 	"serviceID",
 	"abb90071-f3e2-4a31-99f0-fc5d552dbbba",
-	"ID of the service to register with cloud controller",
+	"(optional) - ID of the service to register with cloud controller",
 )
 
 // Azure
 var environment = flag.String(
 	"environment",
 	"AzureCloud",
-	"The environment for Azure Management Service. AzureCloud, AzureChinaCloud, AzureUSGovernment, AzureGermanCloud or AzureStack.",
+	"[REQUIRED] - The environment for Azure Management Service. AzureCloud, AzureChinaCloud, AzureUSGovernment, AzureGermanCloud or AzureStack.",
 )
 
 var tenantID = flag.String(
@@ -107,7 +107,7 @@ var namePrefix = flag.String(
 var adminUsername = flag.String(
 	"adminUsername",
 	"gethadmin",
-	"[REQUIRED] - Administrator username of each deployed VM (alphanumeric characters only)",
+	"(optional) - Administrator username of each deployed VM (alphanumeric characters only)",
 )
 
 var adminPassword = flag.String(
@@ -119,49 +119,49 @@ var adminPassword = flag.String(
 var ethereumAccountPsswd = flag.String(
 	"ethereumAccountPsswd",
 	"",
-	"Password used to secure the default Ethereum account that will be generated",
+	"[REQUIRED] - Password used to secure the default Ethereum account that will be generated",
 )
 
 var ethereumAccountPassphrase = flag.String(
 	"ethereumAccountPassphrase",
 	"",
-	"Password used to generate the private key associated with the default Ethereum account that is generated.  Consider a password with sufficient randomness to ensure a strong private key",
+	"[REQUIRED] - Password used to generate the private key associated with the default Ethereum account that is generated.  Consider a password with sufficient randomness to ensure a strong private key",
 )
 
 var ethereumNetworkID = flag.Uint64(
 	"ethereumNetworkID",
-	72,
-	"Private Ethereum network ID to which to connect (max 9 digit number)",
+	553289,
+	"(optional) - Private Ethereum network ID to which to connect (max 9 digit number)",
 )
 
 var numConsortiumMembers = flag.Uint64(
 	"numConsortiumMembers",
 	2,
-	"Number of members within the network.  Each member's nodes live in their own subnet.",
+	"(optional) - Number of members within the network.  Each member's nodes live in their own subnet.",
 )
 
 var numMiningNodesPerMember = flag.Uint64(
 	"numMiningNodesPerMember",
 	1,
-	"Number of mining nodes to create for each consortium member.",
+	"(optional) - Number of mining nodes to create for each consortium member.",
 )
 
 var mnNodeVMSize = flag.String(
 	"mnNodeVMSize",
 	"Standard_D1_v2",
-	"Size of the virtual machine used for mining nodes",
+	"(optional) - Size of the virtual machine used for mining nodes",
 )
 
 var numTXNodes = flag.Uint64(
 	"numTXNodes",
 	1,
-	"Number of load balanced transaction nodes",
+	"(optional) - Number of load balanced transaction nodes",
 )
 
 var txNodeVMSize = flag.String(
 	"txNodeVMSize",
 	"Standard_D1_v2",
-	"Size of the virtual machine for transaction nodes",
+	"(optional) - Size of the virtual machine for transaction nodes",
 )
 
 var (
