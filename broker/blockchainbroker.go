@@ -177,7 +177,17 @@ func (b *ServiceBroker) Unbind(context context.Context, instanceID string, bindi
 	logger.Info("start")
 	defer logger.Info("end")
 
-	return nil
+	b.mutex.Lock()
+	defer b.mutex.Unlock()
+
+	client := *(b.client.azureRESTClient)
+	client.resourceConfig.ResourceGroupName = instanceID
+	state, err := client.CheckResourceStatus(instanceID)
+	if state == "notfound" {
+		return errors.New("binding does not exist.")
+	}
+
+	return err
 }
 
 func (b *ServiceBroker) Deprovision(context context.Context, instanceID string, details brokerapi.DeprovisionDetails, asyncAllowed bool) (_ brokerapi.DeprovisionServiceSpec, err error) {
