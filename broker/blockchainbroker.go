@@ -110,7 +110,12 @@ func (b *ServiceBroker) LastOperation(_ context.Context, instanceID string, oper
 		return brokerapi.LastOperation{State: brokerapi.Failed, Description: err.Error()}, nil
 	}
 	if state == "succeeded" {
-		return brokerapi.LastOperation{State: brokerapi.Succeeded, Description: description}, nil
+		// only provision can return succeeded
+		adminSiteURL, _, err := client.GetAdminAndRPCUrl(operationDataArr[1])
+		if err != nil {
+			return brokerapi.LastOperation{State: brokerapi.Failed, Description: err.Error()}, nil
+		}
+		return brokerapi.LastOperation{State: brokerapi.Succeeded, Description: adminSiteURL}, nil
 	} else if state == "notfound" && operationDataArr[0] == "deprovision" {
 		return brokerapi.LastOperation{State: brokerapi.Succeeded, Description: description}, nil
 	} else if state == "failed" {
