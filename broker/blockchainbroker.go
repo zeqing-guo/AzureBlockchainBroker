@@ -3,6 +3,7 @@ package broker
 import (
 	"context"
 	"errors"
+	"fmt"
 	"strings"
 	"sync"
 
@@ -111,11 +112,12 @@ func (b *ServiceBroker) LastOperation(_ context.Context, instanceID string, oper
 	}
 	if state == "succeeded" {
 		// only provision can return succeeded
-		adminSiteURL, _, err := client.GetAdminAndRPCUrl(operationDataArr[1])
+		adminSiteURL, rpcURL, err := client.GetAdminAndRPCUrl(operationDataArr[1])
 		if err != nil {
 			return brokerapi.LastOperation{State: brokerapi.Failed, Description: err.Error()}, nil
 		}
-		return brokerapi.LastOperation{State: brokerapi.Succeeded, Description: adminSiteURL}, nil
+		description = fmt.Sprintf("{\"adminSiteURL\": \"%s\", \"rpcURL\": \"%s\"}", adminSiteURL, rpcURL)
+		return brokerapi.LastOperation{State: brokerapi.Succeeded, Description: description}, nil
 	} else if state == "notfound" && operationDataArr[0] == "deprovision" {
 		return brokerapi.LastOperation{State: brokerapi.Succeeded, Description: description}, nil
 	} else if state == "failed" {
@@ -154,23 +156,7 @@ func (b *ServiceBroker) Bind(context context.Context, instanceID string, binding
 	logger.Info("start")
 	defer logger.Info("end")
 
-	b.mutex.Lock()
-	defer b.mutex.Unlock()
-
-	client := *(b.client.azureRESTClient)
-	ready, err := client.CheckCompletion(instanceID)
-	if err != nil {
-		return brokerapi.Binding{}, err
-	}
-	if strings.ToLower(ready) != "succeeded" {
-		return brokerapi.Binding{}, errors.New("Provision has not been finish")
-	}
-
-	_, rpcURL, err := client.GetAdminAndRPCUrl(instanceID)
-	if err != nil {
-		return brokerapi.Binding{}, err
-	}
-	return brokerapi.Binding{Credentials: rpcURL}, err
+	return brokerapi.Binding{}, nil
 }
 
 func (b *ServiceBroker) Update(context context.Context, instanceID string, details brokerapi.UpdateDetails, asyncAllowed bool) (brokerapi.UpdateServiceSpec, error) {
@@ -182,17 +168,7 @@ func (b *ServiceBroker) Unbind(context context.Context, instanceID string, bindi
 	logger.Info("start")
 	defer logger.Info("end")
 
-	b.mutex.Lock()
-	defer b.mutex.Unlock()
-
-	client := *(b.client.azureRESTClient)
-	client.resourceConfig.ResourceGroupName = instanceID
-	state, err := client.CheckResourceStatus(instanceID)
-	if state == "notfound" {
-		return errors.New("binding does not exist.")
-	}
-
-	return err
+	return nil
 }
 
 func (b *ServiceBroker) Deprovision(context context.Context, instanceID string, details brokerapi.DeprovisionDetails, asyncAllowed bool) (_ brokerapi.DeprovisionServiceSpec, err error) {
@@ -209,6 +185,14 @@ func (b *ServiceBroker) Deprovision(context context.Context, instanceID string, 
 
 	client := *(b.client.azureRESTClient)
 	client.resourceConfig.ResourceGroupName = instanceID
+	exist, err := client.GroupExist()
+	if err != nil {
+		return brokerapi.DeprovisionServiceSpec{}, err
+	}
+	if !exist {
+		return brokerapi.DeprovisionServiceSpec{}, nil
+	}
+
 	_, err = client.DeleteGroup()
 	if err != nil {
 		return brokerapi.DeprovisionServiceSpec{}, err
