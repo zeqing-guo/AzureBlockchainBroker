@@ -156,7 +156,23 @@ func (b *ServiceBroker) Bind(context context.Context, instanceID string, binding
 	logger.Info("start")
 	defer logger.Info("end")
 
-	return brokerapi.Binding{}, nil
+	b.mutex.Lock()
+	defer b.mutex.Unlock()
+
+	client := *(b.client.azureRESTClient)
+	ready, err := client.CheckCompletion(instanceID)
+	if err != nil {
+		return brokerapi.Binding{}, err
+	}
+	if strings.ToLower(ready) != "succeeded" {
+		return brokerapi.Binding{}, errors.New("Provision has not been finish")
+	}
+
+	_, rpcURL, err := client.GetAdminAndRPCUrl(instanceID)
+	if err != nil {
+		return brokerapi.Binding{}, err
+	}
+	return brokerapi.Binding{Credentials: rpcURL}, err
 }
 
 func (b *ServiceBroker) Update(context context.Context, instanceID string, details brokerapi.UpdateDetails, asyncAllowed bool) (brokerapi.UpdateServiceSpec, error) {
@@ -168,7 +184,17 @@ func (b *ServiceBroker) Unbind(context context.Context, instanceID string, bindi
 	logger.Info("start")
 	defer logger.Info("end")
 
-	return nil
+	b.mutex.Lock()
+	defer b.mutex.Unlock()
+
+	client := *(b.client.azureRESTClient)
+	client.resourceConfig.ResourceGroupName = instanceID
+	state, err := client.CheckResourceStatus(instanceID)
+	if state == "notfound" {
+		return errors.New("binding does not exist.")
+	}
+
+	return err
 }
 
 func (b *ServiceBroker) Deprovision(context context.Context, instanceID string, details brokerapi.DeprovisionDetails, asyncAllowed bool) (_ brokerapi.DeprovisionServiceSpec, err error) {
